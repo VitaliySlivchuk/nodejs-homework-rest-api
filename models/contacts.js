@@ -16,7 +16,7 @@ const getContactById = async (contactId) => {
   return contacts[index];
 };
 
-const addContact = async (body) => {
+const add = async (body) => {
   const contacts = await listContacts();
   const newContact = {
     id: nanoid(),
@@ -49,6 +49,6 @@ module.exports = {
   listContacts,
   getContactById,
   removeContact,
-  addContact,
+  add,
   updateContact,
 };
