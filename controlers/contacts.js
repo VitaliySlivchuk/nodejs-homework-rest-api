@@ -3,13 +3,15 @@ const { ctrlWrapper, HttpError, nameFieldError } = require("../helpers");
 
 const getAll = async (req, res) => {
   const { _id: owner } = req.user;
-  const { page = 1, limit = 20 } = req.query;
+  const { page = 1, limit = 20, favorite } = req.query;
+  let query = { owner };
+  if (favorite === "true") query = { ...query, favorite: true };
   const skip = (page - 1) * limit;
-  const result = await Contact.find({ owner }, "-createdAt -updatedAt", {
+  const result = await Contact.find(query, "-createdAt -updatedAt", {
     skip,
     limit,
   });
-  res.json({ result, favorite });
+  res.json({ result });
 };
 
 const getById = async (req, res) => {
