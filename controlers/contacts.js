@@ -1,11 +1,15 @@
-const { Contact, schemas } = require("../models/contact");
+const { Contact } = require("../models/contact");
 const { ctrlWrapper, HttpError, nameFieldError } = require("../helpers");
 
-const getAll = async (_, res) => {
-  //const result = await Contact.find({}, 'name'); відповідь: gjkt nskmrb з іменем title
-  //const result = await Contact.find({}, '-name'); відповідь: все поля окрім title
-  const result = await Contact.find();
-  res.json(result);
+const getAll = async (req, res) => {
+  const { _id: owner } = req.user;
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (page - 1) * limit;
+  const result = await Contact.find({ owner }, "-createdAt -updatedAt", {
+    skip,
+    limit,
+  });
+  res.json({ result, favorite });
 };
 
 const getById = async (req, res) => {
@@ -16,34 +20,26 @@ const getById = async (req, res) => {
 };
 
 const addContact = async (req, res) => {
-  const { error } = schemas.schemaAddContact.validate(req.body);
-  if (error) {
-    throw HttpError(400, `missing required ${nameFieldError(error)} field`);
-  }
-  const result = await Contact.create(req.body);
+  const { _id: owner } = req.user;
+  const result = await Contact.create({ ...req.body, owner });
   res.status(201).json(result);
 };
 
 const updateById = async (req, res) => {
   const { body } = req;
   const { contactId } = req.params;
-  const { error } = schemas.schemaUpdataContact.validate(body);
   const result = await Contact.findByIdAndUpdate(contactId, body, {
     new: true,
   });
   if (result === null) throw HttpError(404, "Not found");
-  if (error) throw HttpError(400, "missing field");
   res.status(200).json(result);
 };
 const updateFavorite = async (req, res) => {
   const { body } = req;
   const { contactId } = req.params;
-  console.log(contactId);
-  const { error } = schemas.schemaFavoriteContact.validate(body);
   const result = await Contact.findByIdAndUpdate(contactId, body, {
     new: true,
   });
-  if (error) throw HttpError(400, "missing field favorite");
   if (result === null) throw HttpError(404, "Not found");
   res.status(200).json(result);
 };
