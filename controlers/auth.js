@@ -1,16 +1,28 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const path = require("path");
+//для створення тимчасової аватарки
+const gravatar = require("gravatar");
+const fs = require("fs/promises");
 
 const { User } = require("../models/user");
 const { HttpError, ctrlWrapper } = require("../helpers");
 const { SECRET_KEY } = process.env;
+//виходить на рівень вверх, шукає папку public,avatars
+const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
 const register = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (user) throw HttpError(409, "Email in use");
   const hashPassword = await bcrypt.hash(password, 10);
-  const newUser = await User.create({ ...req.body, password: hashPassword });
+  //створює аватарку якщо передати мило в url
+  const avatarURL = gravatar.url(email);
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  });
   res.status(201).json({
     user: {
       email: newUser.email,
@@ -63,6 +75,22 @@ const updateSubscr = async (req, res) => {
     message: "Subscription updated successfully",
   });
 };
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  //береться тимчасовий шлях
+  const { path: tempUpload, originalname } = req.file;
+  //створюємо назву файла добавляючи id
+  const fileName = `${_id}_${originalname}`;
+  //створюється шлях де ава має зберігатись
+  const resultUpload = path.join(avatarsDir, fileName);
+  //з тимчасового масця переміщується куди вказано другим аргументом
+  await fs.rename(tempUpload, resultUpload);
+  const avatarURL = path.join("avatars", fileName);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+  res.json({
+    avatarURL,
+  });
+};
 
 module.exports = {
   register: ctrlWrapper(register),
@@ -70,4 +98,5 @@ module.exports = {
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
   updateSubscr: ctrlWrapper(updateSubscr),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };

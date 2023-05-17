@@ -5,8 +5,9 @@ const {
   getCurrent,
   logout,
   updateSubscr,
+  updateAvatar,
 } = require("../../controlers/auth");
-const { validateBody, authenticate } = require("../../middlewares");
+const { validateBody, authenticate, upload } = require("../../middlewares");
 const {
   schemas: { registerSchema, loginSchemas, subscrSchema },
 } = require("../../models/user");
@@ -18,5 +19,6 @@ router.post("/login", validateBody(loginSchemas), login);
 router.get("/current", authenticate, getCurrent);
 router.post("/logout", authenticate, logout);
 router.patch("/", authenticate, validateBody(subscrSchema), updateSubscr);
+router.patch("/avatars", authenticate, upload.single("avatar"), updateAvatar);
 
 module.exports = router;
