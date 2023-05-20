@@ -5,7 +5,7 @@ const path = require("path");
 const fs = require("fs/promises");
 
 const { User } = require("../models/user");
-const { HttpError, ctrlWrapper } = require("../helpers");
+const { HttpError, ctrlWrapper, resizeImage } = require("../helpers");
 const { SECRET_KEY } = process.env;
 const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
@@ -76,11 +76,10 @@ const updateSubscr = async (req, res) => {
 const updateAvatar = async (req, res) => {
   const { _id } = req.user;
   const { path: tempUpload, originalname } = req.file;
-  console.log("tempUpload" + tempUpload);
-  console.log("originalname" + originalname);
   const fileName = `${_id}_${originalname}`;
   const resultUpload = path.join(avatarsDir, fileName);
   await fs.rename(tempUpload, resultUpload);
+  await resizeImage(resultUpload);
   const avatarURL = path.join("avatars", fileName);
   await User.findByIdAndUpdate(_id, { avatarURL });
   res.json({
